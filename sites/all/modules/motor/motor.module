@@ -1,0 +1,124 @@
+<?php
+
+
+
+function motor_menu() {
+  
+   $items['join-to-school'] = array(
+    'title' => t('Join to school'),
+    'page callback' => 'motor_join_school',
+    'access arguments' => array('access content'),
+    'page arguments' => array(1),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  return $items;
+  
+}
+
+function motor_schools_member_in_list() {
+  global $user;
+  $content = '';
+  $content.= views_embed_view('schools_of_member','default',arg(1));
+  return $content;
+}
+
+function motor_join_school($nid) {
+  global $user;
+  
+  $content = '';
+  $content.= views_embed_view('schools_of_member','default',$user->uid);
+  $user_data = user_load($user->uid);
+  dpm($user_data);
+  $schools_already = $user_data->field_school['und'];
+  $schools = array();
+  foreach ($schools_already as $school) {
+    $schools[] = $school['nid'];
+  }
+  dpm($schools);
+  if (!in_array($nid, $schools)) {
+    $user_data->field_school['und'][] = array('nid' => arg(1));
+    user_save($user_data);
+    $content.= 'csatlakozva';
+  }
+  else {
+    $content.= 'már tag';
+  }
+  
+  dpm($user_data);
+  
+  
+  return $content;
+}
+
+function motor_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+  //dpm($form);
+  $user_data = user_load($user->uid);
+    //dpm($user_data);
+
+  $parts = explode('_',$form_id);
+  array_pop($parts);
+  $new_form_id = implode('_',$parts);
+  
+  if ($form_id == 'question_node_form') {
+    $form['field_school']['und']['#default_value'][0] = arg(3);
+    $form['field_school']['#attributes']['class'][] = 'element-hidden';
+    //dpm('catch');
+  }
+  if ($form_id == 'comment_node_question_form') {
+    //dpm('hola');
+    
+  }
+}
+
+function motor_user_permission_comment_question($qid, $uid) {
+  $node = node_load($qid);
+  $school_nid = $node->field_school['und'][0]['nid'];
+  dpm($node);
+  
+  $user_data = user_load($uid);
+  //dpm($user_data);
+  $schools_already = $user_data->field_school['und'];
+  $schools = array();
+  foreach ($schools_already as $school) {
+    $schools[] = $school['nid'];
+  }
+
+  if (in_array($school_nid, $schools) || $node->uid == $uid) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+
+function motor_block_info() {
+  $blocks['schools_member_in'] = array(
+    'info' => t('Schools member in'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+
+function motor_block_view($delta = '') {
+  switch ($delta) {
+    case 'schools_member_in':
+      $block['subject'] = '';
+      $block['content'] = motor_schools_member_in_list();
+      break;
+  }
+  return $block;
+}
+
+
+
+
+
+
+
+
+
+

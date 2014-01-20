@@ -1,0 +1,4 @@
+name = MOTOR - Add on funcionalities
+description = Set node reference field to actual node
+core = 7.x
+stylesheets[all][] = motor-style.css
